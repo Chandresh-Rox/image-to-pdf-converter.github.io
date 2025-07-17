@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Image to PDF Converter - Select Page Size & Resize</title>
+
+  <!-- ✅ Google AdSense Script -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3855135763792496"
+    crossorigin="anonymous"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f2f2;
+      text-align: center;
+      padding: 30px;
+    }
+    .container {
+      background: white;
+      padding: 25px;
+      border-radius: 10px;
+      display: inline-block;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      max-width: 600px;
+      width: 90%;
+    }
+    input, select, button {
+      margin: 15px 0;
+      padding: 10px;
+      font-size: 16px;
+      width: 90%;
+      max-width: 400px;
+    }
+    #status {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>📸 Image to PDF Converter</h2>
+
+    <input type="file" id="imageInput" accept="image/*" multiple /><br>
+
+    <select id="pageSize">
+      <option value="a4">A4 (210mm x 297mm)</option>
+      <option value="a5">A5 (148mm x 210mm)</option>
+      <option value="letter">Letter (216mm x 279mm)</option>
+      <option value="legal">Legal (216mm x 356mm)</option>
+    </select><br>
+
+    <label for="scale">Resize Images (%):</label><br>
+    <input type="number" id="scale" min="10" max="100" value="100" /><br>
+
+    <button onclick="convertToPDF()">Convert to PDF</button>
+
+    <!-- ✅ Your AdSense Ad Unit -->
+    <div style="margin-top: 20px;">
+      <ins class="adsbygoogle"
+        style="display:block"
+        data-ad-client="ca-pub-3855135763792496"
+        data-ad-slot="2776340525"
+        data-ad-format="auto"
+        data-full-width-responsive="true"></ins>
+      <script>
+        (adsbygoogle = window.adsbygoogle || []).push({});
+      </script>
+    </div>
+
+    <p id="status">Select images and options to begin</p>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+    const { jsPDF } = window.jspdf;
+
+    const pageSizes = {
+      a4: [210, 297],
+      a5: [148, 210],
+      letter: [216, 279],
+      legal: [216, 356]
+    };
+
+    async function convertToPDF() {
+      const input = document.getElementById('imageInput');
+      const status = document.getElementById('status');
+      const files = input.files;
+      const pageSizeKey = document.getElementById('pageSize').value;
+      const scalePercent = parseInt(document.getElementById('scale').value);
+
+      if (!files.length) {
+        status.textContent = "❌ Please select one or more images.";
+        return;
+      }
+
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: pageSizeKey
+      });
+
+      const [pageWidth, pageHeight] = pageSizes[pageSizeKey];
+
+      status.textContent = "⏳ Processing images...";
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const dataUrl = await readAsDataURL(file);
+        const img = new Image();
+        img.src = dataUrl;
+
+        await new Promise(resolve => {
+          img.onload = () => {
+            const ratio = img.width / img.height;
+            let imgWidth = pageWidth * (scalePercent / 100);
+            let imgHeight = imgWidth / ratio;
+
+            if (imgHeight > pageHeight * (scalePercent / 100)) {
+              imgHeight = pageHeight * (scalePercent / 100);
+              imgWidth = imgHeight * ratio;
+            }
+
+            const x = (pageWidth - imgWidth) / 2;
+            const y = (pageHeight - imgHeight) / 2;
+
+            if (i > 0) pdf.addPage();
+            pdf.addImage(dataUrl, 'JPEG', x, y, imgWidth, imgHeight);
+            resolve();
+          };
+        });
+      }
+
+      const blob = pdf.output('blob');
+      const fileSizeKB = Math.round(blob.size / 1024);
+      const fileSizeMB = (fileSizeKB / 1024).toFixed(2);
+
+      status.textContent = `✅ Done! Estimated Size: ${fileSizeKB} KB (${fileSizeMB} MB). Downloading...`;
+      pdf.save("images-to-pdf.pdf");
+    }
+
+    function readAsDataURL(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = err => reject(err);
+        reader.readAsDataURL(file);
+      });
+    }
+  </script>
+  <p style="margin-top: 30px; font-size: 14px;">
+  <a href="privacy.html">Privacy Policy</a> |
+  <a href="terms.html">Terms & Conditions</a> |
+  <a href="contact.html">Contact</a>
+</p>
+
+</body>
+</html>
